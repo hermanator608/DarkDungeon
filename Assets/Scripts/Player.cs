@@ -4,9 +4,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IDamageable
 {
+    [SerializeField] private GameObject magic;
+    [SerializeField] private Transform magicSpawnPoint;
+    private GameObject magicInstance;
+
+    public Transform pointer;
+
     private Vector2 movement;
     private Rigidbody2D rb;
     private Animator animator;
@@ -18,10 +25,10 @@ public class Player : MonoBehaviour
     public Transform attackPoint;
     public float attackRate = 2f;
     public float attackRange = 0.5f;
-    public int attackDamage = 50;
+    public int attackDamage = 1;
     public LayerMask enemyLayers;
     private int currentHealth;
-    public int maxHealth = 100;
+    public int maxHealth = 2;
 
     private void Awake()
     {
@@ -54,11 +61,16 @@ public class Player : MonoBehaviour
         {
             animator.SetTrigger("Casting");
             nextAttackTime = Time.time + 1f / attackRate;
-            Attack();
+            MagicAttack();
         }
     }
 
-    private void Attack()
+    private void MagicAttack()
+    {
+        magicInstance = Instantiate(magic, magicSpawnPoint.position, transform.rotation);
+    }
+
+    private void MeleeAttack()
     {
         // Detect Hit
         Collider2D[] hits = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
@@ -73,6 +85,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
+        HandlePointer();
         HandleFlip();
 
         if (movement != null && (movement.x != 0 || movement.y != 0))
@@ -88,7 +101,18 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void HandleFlip ()
+    // TODO: Update this to work with Gamepad
+    private void HandlePointer()
+    {
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        Vector3 rotation = mousePosition - pointer.localPosition;
+        float rotZ = Mathf.Atan2(rotation.y, rotation.x) * Mathf.Rad2Deg;
+
+        pointer.localRotation = Quaternion.Euler(0, 0, rotZ);
+    }
+
+    private void HandleFlip()
     {
 
         if (movement.x < 0 && !spriteRenderer.flipX)
@@ -107,16 +131,17 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if (currentHealth <= 0) 
+            return;
+
         currentHealth -= damage;
 
         // Play hurt animation
         animator.SetTrigger("Damage");
 
+        Debug.Log("Took damage, current health: " + currentHealth);
         if (currentHealth <= 0)
         {
-            // Die animation
-
-            // Disable enemy
             Die();
         }
     }
@@ -124,6 +149,31 @@ public class Player : MonoBehaviour
     private void Die()
     {
         Debug.Log("GAME OVER: YOU'RE DEAD");
+        StartCoroutine(DeathRotate());
+        Invoke("RestartGame", 5f); 
+    }
+
+    private void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    // TODO: Replace with animation?
+    private IEnumerator DeathRotate()
+    {
+        yield return new WaitForSeconds(.5f);
+
+        animator.enabled = false;
+        float totalRotation = 0f;
+
+        while (totalRotation < 90f)
+        {
+            float rotationAmount = 500 * Time.deltaTime;
+            transform.Rotate(0f, 0f, rotationAmount);
+            totalRotation += rotationAmount;
+
+            yield return null;
+        }
     }
 
     private void OnDrawGizmosSelected()
