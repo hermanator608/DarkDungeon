@@ -8,7 +8,6 @@ public class Enemy : MonoBehaviour, IDamageable
     private int currentHealth;
     private Animator animator;
     private AIPath aiPath;
-    private AIDestinationSetter destinationSetter;
     private bool isAttacking = false;
     private bool isFacingRight = true;
     private bool startedAttacking = false;
@@ -29,7 +28,6 @@ public class Enemy : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
         animator = GetComponentInChildren<Animator>();
         aiPath = GetComponent<AIPath>();
-        destinationSetter = GetComponent<AIDestinationSetter>();
         attackPoint.SetParent(gameObject.transform);
     }
 
@@ -70,7 +68,7 @@ public class Enemy : MonoBehaviour, IDamageable
             isFacingRight = false;
         }
 
-        // Attach if at end of path
+        // Attack if at end of path
         if (aiPath.reachedEndOfPath && !isAttacking)
         {
             StartCoroutine(AttackWithDelay());
@@ -164,6 +162,7 @@ public class Enemy : MonoBehaviour, IDamageable
             Gizmos.DrawWireSphere(attackPoint.position, attackRange);
         }
 
+        Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackMinDistance);
     }
 }

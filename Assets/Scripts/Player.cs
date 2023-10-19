@@ -12,13 +12,11 @@ public class Player : MonoBehaviour, IDamageable
     [SerializeField] private Transform magicSpawnPoint;
     private GameObject magicInstance;
 
-    public Transform pointer;
-
     private Vector2 movement;
     private Rigidbody2D rb;
     private Animator animator;
     private SpriteRenderer spriteRenderer;
-    private Light2D light;
+    
     private float nextAttackTime = 0f;
 
     public int speed = 5;
@@ -36,7 +34,6 @@ public class Player : MonoBehaviour, IDamageable
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = gameObject.GetComponent<Animator>();
-        light = GetComponentInChildren<Light2D>();
 
         currentHealth = maxHealth;
     }
@@ -67,6 +64,7 @@ public class Player : MonoBehaviour, IDamageable
 
     private void MagicAttack()
     {
+
         magicInstance = Instantiate(magic, magicSpawnPoint.position, transform.rotation);
     }
 
@@ -85,7 +83,6 @@ public class Player : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
-        HandlePointer();
         HandleFlip();
 
         if (movement != null && (movement.x != 0 || movement.y != 0))
@@ -101,30 +98,18 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
-    // TODO: Update this to work with Gamepad
-    private void HandlePointer()
-    {
-        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-        Vector3 rotation = mousePosition - pointer.localPosition;
-        float rotZ = Mathf.Atan2(rotation.y, rotation.x) * Mathf.Rad2Deg;
-
-        pointer.localRotation = Quaternion.Euler(0, 0, rotZ);
-    }
-
+    // TODO: Update this to use mouse angle?
     private void HandleFlip()
     {
 
         if (movement.x < 0 && !spriteRenderer.flipX)
         {
             spriteRenderer.flipX = true;
-            light.gameObject.transform.SetLocalPositionAndRotation(new Vector3(0.25f, 0.5f), transform.rotation);
             attackPoint.gameObject.transform.SetLocalPositionAndRotation(new Vector3(-attackPoint.gameObject.transform.localPosition.x, attackPoint.gameObject.transform.localPosition.y), attackPoint.gameObject.transform.localRotation);
         }
         else if (movement.x > 0 && spriteRenderer.flipX)
         {
             spriteRenderer.flipX = false;
-            light.gameObject.transform.SetLocalPositionAndRotation(new Vector3(-0.25f, 0.5f), transform.rotation);
             attackPoint.gameObject.transform.SetLocalPositionAndRotation(new Vector3(-attackPoint.gameObject.transform.localPosition.x, attackPoint.gameObject.transform.localPosition.y), attackPoint.gameObject.transform.localRotation);
         }
     }
